@@ -17,8 +17,7 @@ def setup_parser(parser):
 
 def main(args):
   items = []
-  in_file = args.input
-  with open(in_file, "r") as inf:
+  with open(args.input, "r") as inf:
     lines = [x.rstrip() for x in inf]
     lines = list(x for x in lines if x)
 
@@ -32,8 +31,7 @@ def main(args):
       }
       items.append(item)
 
-  out_file = args.output
-  with open(out_file, "w") as outf:
+  with open(args.output, "w") as outf:
     json.dump(items, outf, indent=2)
 
 
