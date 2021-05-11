@@ -5,6 +5,8 @@ import argparse
 import os
 from shutil import copy
 
+from elftools.elf.elffile import ELFFile
+
 
 def parser():
   parser = argparse.ArgumentParser(description="Arbitrar JSON Generation")
@@ -41,34 +43,43 @@ def run_fast_scandir(dir, names):
 def has_debug_info(path):
   with open(path, "rb") as f:
     try:
+      print(f"start! with path {path}")
       elffile = ELFFile(f)
+      print("ok!")
       if not elffile.has_dwarf_info(): return False
+      print("still fine!")
       dwinfo = elffile.get_dwarf_info()
+      print("almost!")
       CUs = list(dwinfo.iter_CUs())
       return len(CUs) > 0
     except:
-      print(f"has_debug_info: {f} inspection failed; skipping")
+      print(f"has_debug_info: {path} inspection failed; skipping")
       return False
 
+
+def remove_suffix(text, suffix):
+  return text[:-len(suffix)] if text.endswith(suffix) and len(suffix) != 0 else text
 
 # Given a bc file's path, get candidate name and starting search directory
 def bc_path_to_name(path):
   (pre, ext) = os.path.splitext(path)
   if not pre: return ""
-  splits = pre.split("/")[-1]
-  name = splits[-1]
+  splits = pre.split("/")
+  raw_name = splits[-1]
+  name = remove_suffix(raw_name, "_dedup")
   return name
 
 
 def main(args):
   names = []
-  with open(args.in_file) as inf:
+  with open(args.input) as inf:
     lines = [x.rstrip() for x in inf]
     names = list(bc_path_to_name(x) for x in lines if x)
 
-  files, _ = run_fast_scandir(args.search_dir, names)
+  _, files = run_fast_scandir(args.search_dir, names)
 
   for file in files:
+    print(f"chekcing file {file}")
     if has_debug_info(file):
       copy(file, args.out_dir)
 
